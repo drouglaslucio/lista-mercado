@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista do Mercado</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f1;
+      color: #222;
+      padding-bottom: 80px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      background: #2d5a3d;
+      color: white;
+      padding: 14px 16px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .header-mode {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .counter {
+      font-size: 13px;
+      opacity: 0.88;
+      margin-top: 2px;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 7px 13px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-secondary:active { background: rgba(255,255,255,0.28); }
+
+    .btn-danger {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 0;
+      text-decoration: underline;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* shopping mode header tint */
+    body.mode-shopping header { background: #1a3d28; }
+
+    /* ── Category & Items ───────────────────────────────────── */
+    .category { margin: 14px 12px 0; }
+
+    .category-header {
+      background: #2d5a3d;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px 8px 0 0;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    body.mode-shopping .category-header { background: #1a3d28; }
+
+    .category-items {
+      background: white;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      padding: 13px 14px;
+      border-bottom: 1px solid #f2f2f2;
+      cursor: pointer;
+      user-select: none;
+      min-height: 54px;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .item:last-child { border-bottom: none; }
+    .item:active { background: #eef5f0; }
+
+    /* ── Planning mode item states ──────────────────────────── */
+    .item-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      margin-right: 13px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.18s;
+      border: 2px solid #ddd;
+      color: #bbb;
+      font-weight: 300;
+    }
+
+    /* Planning: not selected */
+    body.mode-planning .item-icon::before { content: '+'; }
+
+    /* Planning: selected (planned) */
+    body.mode-planning .item.planned {
+      background: #f0faf3;
+    }
+
+    body.mode-planning .item.planned .item-icon {
+      background: #2d5a3d;
+      border-color: #2d5a3d;
+      color: white;
+      font-size: 14px;
+    }
+
+    body.mode-planning .item.planned .item-icon::before { content: '✓'; }
+
+    body.mode-planning .item.planned .item-name {
+      color: #2d5a3d;
+      font-weight: 600;
+    }
+
+    /* ── Shopping mode item states ──────────────────────────── */
+    body.mode-shopping .item-icon {
+      border-color: #ccc;
+      color: transparent;
+    }
+
+    body.mode-shopping .item.bought .item-icon {
+      background: #2d5a3d;
+      border-color: #2d5a3d;
+    }
+
+    body.mode-shopping .item.bought .item-icon::after {
+      content: '✓';
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    body.mode-shopping .item.bought .item-name {
+      text-decoration: line-through;
+      color: #b0b0b0;
+    }
+
+    body.mode-shopping .item.bought .item-obs { color: #ccc; }
+
+    /* ── Item info ──────────────────────────────────────────── */
+    .item-info { flex: 1; min-width: 0; }
+
+    .item-name {
+      font-size: 15.5px;
+      line-height: 1.3;
+      transition: color 0.18s;
+    }
+
+    .item-obs {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    /* ── Bottom bar ─────────────────────────────────────────── */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+
+    .btn-cta {
+      flex: 1;
+      background: #2d5a3d;
+      color: white;
+      border: none;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-cta:active { background: #1e3e2a; }
+
+    .btn-cta:disabled {
+      background: #c8d9cc;
+      cursor: default;
+    }
+
+    .status-area {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background 0.3s;
+    }
+
+    .status-dot.connected { background: #4caf50; }
+    .status-dot.error     { background: #f44336; }
+
+    /* ── Empty state ────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 30px;
+      color: #999;
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; line-height: 1.6; }
+  </style>
+</head>
+<body class="mode-planning">
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>🛒 Lista do Mercado</h1>
+      <div class="header-mode" id="header-mode">Planejamento</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+      <button class="btn-secondary" id="btn-secondary" onclick="onSecondaryAction()">Resetar Tudo</button>
+    </div>
+  </div>
+  <div class="counter" id="counter">Selecione os itens que precisa comprar</div>
+</header>
+
+<div id="list"></div>
+
+<div class="bottom-bar">
+  <button class="btn-cta" id="btn-cta" onclick="onCtaAction()" disabled>Ir para as Compras →</button>
+  <div class="status-area">
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPT 1 — lista e UI (roda imediatamente, sem dependências)
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+  // ──────────────────────────────────────────────────────────────
+  // LISTA DE ITENS (edite aqui para adicionar/remover itens)
+  // ──────────────────────────────────────────────────────────────
+  var ITEMS = [
+    // Alimentos para Crianças
+    { id: "lanches_livia",          name: "Lanches Lívia",                          category: "Alimentos para Crianças", obs: "milho, mortadela defumada" },
+
+    // Bebidas
+    { id: "agua_coco",              name: "Água de Coco",                           category: "Bebidas" },
+    { id: "refrigerante",           name: "Refrigerante",                           category: "Bebidas" },
+    { id: "sachet_cha",             name: "Sachês de Chá",                          category: "Bebidas", obs: "cidreira, matte e hortelã" },
+    { id: "sucos_livia",            name: "Sucos Lívia",                            category: "Bebidas" },
+    { id: "sucos_polpa",            name: "Sucos Polpa",                            category: "Bebidas" },
+
+    // Carnes
+    { id: "frango",                 name: "Frango",                                 category: "Carnes" },
+    { id: "patinho_moido",          name: "Patinho Moído",                          category: "Carnes" },
+
+    // Cereais
+    { id: "aveia",                  name: "Aveia em Flocos",                        category: "Cereais" },
+    { id: "cafe",                   name: "Café",                                   category: "Cereais" },
+    { id: "chia",                   name: "Chia",                                   category: "Cereais" },
+    { id: "chocolate_70",           name: "Chocolate 70% Cacau",                    category: "Cereais" },
+    { id: "cuscuz",                 name: "Cuscuz",                                 category: "Cereais" },
+    { id: "milho_pipoca",           name: "Milho de Pipoca",                        category: "Cereais" },
+    { id: "temperos",               name: "Temperos",                               category: "Cereais" },
+    { id: "toddy",                  name: "Toddy (refil)",                          category: "Cereais" },
+
+    // Condimentos
+    { id: "adocante",               name: "Adoçante",                               category: "Condimentos" },
+    { id: "fermento",               name: "Fermento",                               category: "Condimentos" },
+    { id: "molho_tomate",           name: "Molho de Tomate",                        category: "Condimentos" },
+    { id: "tempero_alho",           name: "Tempero Alho",                           category: "Condimentos" },
+    { id: "tempero_cebola",         name: "Tempero Cebola",                         category: "Condimentos" },
+    { id: "vinagre",                name: "Vinagre de Álcool",                      category: "Condimentos" },
+
+    // Farinhas
+    { id: "acucar",                 name: "Açúcar",                                 category: "Farinhas" },
+    { id: "tapioca",                name: "Tapioca",                                category: "Farinhas" },
+    { id: "trigo",                  name: "Trigo",                                  category: "Farinhas" },
+
+    // Farmácia
+    { id: "acetona",                name: "Acetona",                                category: "Farmácia" },
+    { id: "algodao",                name: "Algodão",                                category: "Farmácia" },
+    { id: "cotonete",               name: "Cotonete",                               category: "Farmácia" },
+    { id: "leite_magnesia",         name: "Leite de Magnésia",                      category: "Farmácia" },
+    { id: "lenco_umedecido",        name: "Lenço Umedecido",                        category: "Farmácia" },
+
+    // Grãos
+    { id: "arroz",                  name: "Arroz",                                  category: "Grãos" },
+    { id: "feijao",                 name: "Feijão",                                 category: "Grãos" },
+    { id: "macarrao",               name: "Macarrão",                               category: "Grãos" },
+    { id: "sal",                    name: "Sal",                                    category: "Grãos" },
+
+    // Higiene Pessoal
+    { id: "condicionador_pri",      name: "Condicionador Pri Pantene Liso Extremo", category: "Higiene Pessoal" },
+    { id: "creme_dental",           name: "Creme Dental",                           category: "Higiene Pessoal" },
+    { id: "creme_dental_livia",     name: "Creme Dental Lívia",                     category: "Higiene Pessoal" },
+    { id: "creme_pentear_livia",    name: "Creme de Pentear Lívia",                 category: "Higiene Pessoal" },
+    { id: "desodorante_douglas",    name: "Desodorante Douglas",                    category: "Higiene Pessoal" },
+    { id: "desodorante_pri",        name: "Desodorante Pri",                        category: "Higiene Pessoal" },
+    { id: "escova_dente",           name: "Escova de Dente",                        category: "Higiene Pessoal" },
+    { id: "fio_dental",             name: "Fio Dental",                             category: "Higiene Pessoal" },
+    { id: "fio_dental_livia",       name: "Fio Dental Lívia",                       category: "Higiene Pessoal" },
+    { id: "papel_higienico",        name: "Papel Higiênico",                        category: "Higiene Pessoal" },
+    { id: "presto_barba",           name: "Presto Barba",                           category: "Higiene Pessoal" },
+    { id: "sabonete_glicerina",     name: "Sabonete Líquido Glicerina",             category: "Higiene Pessoal" },
+    { id: "sabonete_maos",          name: "Sabonete Líquido Mãos",                 category: "Higiene Pessoal" },
+    { id: "shampoo_douglas",        name: "Shampoo Douglas",                        category: "Higiene Pessoal" },
+    { id: "shampoo_pri",            name: "Shampoo Pri",                            category: "Higiene Pessoal" },
+    { id: "talco_pes",              name: "Talco Pés",                              category: "Higiene Pessoal" },
+
+    // Hortifruti
+    { id: "frutas",                 name: "Frutas",                                 category: "Hortifruti", obs: "banana" },
+    { id: "tomate_pepino",          name: "Tomate e Pepino",                        category: "Hortifruti", obs: "pepino" },
+
+    // Laticínios
+    { id: "leite_condensado",       name: "Leite Condensado",                       category: "Laticínios" },
+    { id: "leite",                  name: "Leite Integral e Desnatado",             category: "Laticínios" },
+    { id: "manteiga",               name: "Manteiga",                               category: "Laticínios" },
+    { id: "margarina",              name: "Margarina",                              category: "Laticínios" },
+    { id: "queijo_branco",          name: "Queijo Branco",                          category: "Laticínios" },
+    { id: "queijo_mussarela",       name: "Queijo Mussarela",                       category: "Laticínios" },
+    { id: "queijo_ralado",          name: "Queijo Ralado",                          category: "Laticínios" },
+    { id: "requeijao",              name: "Requeijão Light",                        category: "Laticínios" },
+
+    // Limpeza
+    { id: "agua_sanitaria",         name: "Água Sanitária",                         category: "Limpeza" },
+    { id: "alcool_limp",            name: "Álcool",                                 category: "Limpeza" },
+    { id: "alvejante",              name: "Alvejante sem Cloro",                    category: "Limpeza" },
+    { id: "amaciante_downy",        name: "Amaciante Downy",                        category: "Limpeza" },
+    { id: "amaciante_criancas",     name: "Amaciante crianças Vida Macia",          category: "Limpeza", obs: "amarelo ou lilás" },
+    { id: "cif_banheiro",           name: "Cif Banheiro",                           category: "Limpeza" },
+    { id: "desinfetante",           name: "Desinfetante",                           category: "Limpeza" },
+    { id: "detergente",             name: "Detergente Louça",                       category: "Limpeza" },
+    { id: "lava_roupas_omo",        name: "Lava Roupas Omo",                        category: "Limpeza" },
+    { id: "lava_roupas_criancas",   name: "Lava Roupas crianças Ola ou Vida Macia", category: "Limpeza" },
+    { id: "limpa_laminado",         name: "Limpa Laminado",                         category: "Limpeza" },
+    { id: "limpa_porcelanato",      name: "Limpa Porcelanato",                      category: "Limpeza" },
+    { id: "lustra_moveis",          name: "Lustra Móveis",                          category: "Limpeza" },
+    { id: "mr_musculo",             name: "Mr Músculo Cozinha",                     category: "Limpeza" },
+    { id: "paninho",                name: "Paninho de Limpeza Descartável",         category: "Limpeza" },
+    { id: "sabao_coco",             name: "Sabão de Coco",                          category: "Limpeza" },
+    { id: "sabao_lava_loucas",      name: "Sabão Lava Louças",                      category: "Limpeza" },
+    { id: "sabao_pedra",            name: "Sabão em Pedra",                         category: "Limpeza" },
+    { id: "veja_gold",              name: "Veja Gold Multiuso",                     category: "Limpeza" },
+    { id: "veneno_barata",          name: "Veneno Barata",                          category: "Limpeza" },
+
+    // Ovos
+    { id: "ovos",                   name: "Ovos",                                   category: "Ovos" },
+
+    // Padaria
+    { id: "bisnaguinha",            name: "Bisnaguinha",                            category: "Padaria" },
+    { id: "pao_forma",              name: "Pão de Forma Wikbold Integral",          category: "Padaria" },
+
+    // Suplementos
+    { id: "whey",                   name: "Whey Protein",                           category: "Suplementos" },
+
+    // Utilidades Domésticas
+    { id: "bombril",                name: "Bombril",                                category: "Utilidades Domésticas" },
+    { id: "buchinha",               name: "Buchinha Azul",                          category: "Utilidades Domésticas" },
+    { id: "copo_descartavel",       name: "Copo Descartável",                       category: "Utilidades Domésticas" },
+    { id: "fosforo",                name: "Fósforo",                                category: "Utilidades Domésticas" },
+    { id: "guardanapo",             name: "Guardanapo de Papel",                    category: "Utilidades Domésticas" },
+    { id: "papel_aluminio",         name: "Papel Alumínio",                         category: "Utilidades Domésticas" },
+    { id: "plastico_filme",         name: "Plástico Filme",                         category: "Utilidades Domésticas" },
+    { id: "prendedor",              name: "Prendedor",                              category: "Utilidades Domésticas" },
+    { id: "rodo",                   name: "Rodo",                                   category: "Utilidades Domésticas" },
+    { id: "saco_lixo_grande",       name: "Saco de Lixo Grande",                   category: "Utilidades Domésticas" },
+    { id: "saco_lixo_pequeno",      name: "Saco de Lixo Pequeno",                  category: "Utilidades Domésticas" },
+    { id: "saco_plastico",          name: "Saco Plástico",                          category: "Utilidades Domésticas" },
+    { id: "vassoura",               name: "Vassoura",                               category: "Utilidades Domésticas" },
+  ];
+
+  // ── State ─────────────────────────────────────────────────────
+  var planningState = {};   // { id: true } — itens que precisa comprar
+  var shoppingState = {};   // { id: true } — itens já comprados
+  var viewMode = 'planning';
+
+  // ── Category grouping ─────────────────────────────────────────
+  var categories = {};
+  ITEMS.forEach(function(item) {
+    if (!categories[item.category]) categories[item.category] = [];
+    categories[item.category].push(item);
+  });
+  var sortedCats = Object.keys(categories).sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+
+  // ── Build DOM ─────────────────────────────────────────────────
+  function buildList() {
+    var container = document.getElementById('list');
+    container.innerHTML = '';
+
+    var itemsToShow = viewMode === 'shopping'
+      ? ITEMS.filter(function(i){ return planningState[i.id]; })
+      : ITEMS;
+
+    if (viewMode === 'shopping' && itemsToShow.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="icon">🛒</div>' +
+          '<p>Nenhum item na lista.<br>Volte ao planejamento e selecione o que precisa.</p>' +
+        '</div>';
+      return;
+    }
+
+    // Group items by category for current view
+    var visibleCats = {};
+    itemsToShow.forEach(function(item) {
+      if (!visibleCats[item.category]) visibleCats[item.category] = [];
+      visibleCats[item.category].push(item);
+    });
+
+    sortedCats.forEach(function(cat) {
+      if (!visibleCats[cat]) return;
+
+      var catDiv = document.createElement('div');
+      catDiv.className = 'category';
+
+      var header = document.createElement('div');
+      header.className = 'category-header';
+      header.textContent = cat;
+
+      var itemsDiv = document.createElement('div');
+      itemsDiv.className = 'category-items';
+
+      visibleCats[cat].forEach(function(item) {
+        var el = document.createElement('div');
+        el.className = 'item';
+        el.id = 'item-' + item.id;
+
+        var stateClass = viewMode === 'planning'
+          ? (planningState[item.id] ? ' planned' : '')
+          : (shoppingState[item.id] ? ' bought' : '');
+        el.className = 'item' + stateClass;
+
+        el.innerHTML =
+          '<div class="item-icon"></div>' +
+          '<div class="item-info">' +
+            '<div class="item-name">' + item.name + '</div>' +
+            (item.obs ? '<div class="item-obs">' + item.obs + '</div>' : '') +
+          '</div>';
+
+        el.addEventListener('click', function(){ toggleItem(item.id); });
+        itemsDiv.appendChild(el);
+      });
+
+      catDiv.appendChild(header);
+      catDiv.appendChild(itemsDiv);
+      container.appendChild(catDiv);
+    });
+  }
+
+  // ── Toggle item ───────────────────────────────────────────────
+  function toggleItem(id) {
+    if (viewMode === 'planning') {
+      planningState[id] = !planningState[id];
+      if (!planningState[id]) delete planningState[id];
+      var el = document.getElementById('item-' + id);
+      if (el) el.classList.toggle('planned', !!planningState[id]);
+      updateUI();
+      if (window._fbUpdatePlanning) window._fbUpdatePlanning(id, planningState[id] || null);
+    } else {
+      shoppingState[id] = !shoppingState[id];
+      if (!shoppingState[id]) delete shoppingState[id];
+      var el2 = document.getElementById('item-' + id);
+      if (el2) el2.classList.toggle('bought', !!shoppingState[id]);
+      updateUI();
+      if (window._fbUpdateShopping) window._fbUpdateShopping(id, shoppingState[id] || null);
+    }
+  }
+
+  // ── Update counter + buttons ──────────────────────────────────
+  function updateUI() {
+    var planned = Object.keys(planningState).filter(function(k){ return planningState[k]; });
+    var bought  = Object.keys(shoppingState).filter(function(k){ return shoppingState[k]; });
+
+    if (viewMode === 'planning') {
+      document.getElementById('counter').textContent =
+        planned.length > 0
+          ? planned.length + ' ite' + (planned.length === 1 ? 'm' : 'ns') + ' na lista'
+          : 'Selecione os itens que precisa comprar';
+      document.getElementById('btn-cta').disabled = planned.length === 0;
+    } else {
+      document.getElementById('counter').textContent =
+        bought.length + ' de ' + planned.length + ' comprado' + (planned.length === 1 ? '' : 's');
+    }
+  }
+
+  // ── Mode switching ────────────────────────────────────────────
+  function switchToShopping() {
+    viewMode = 'shopping';
+    document.body.className = 'mode-shopping';
+    document.getElementById('header-mode').textContent = 'Compras';
+    document.getElementById('btn-secondary').textContent = '← Editar Lista';
+    document.getElementById('btn-cta').textContent = 'Nova Compra';
+    document.getElementById('btn-cta').disabled = false;
+    buildList();
+    updateUI();
+  }
+
+  function switchToPlanning() {
+    viewMode = 'planning';
+    document.body.className = 'mode-planning';
+    document.getElementById('header-mode').textContent = 'Planejamento';
+    document.getElementById('btn-secondary').textContent = 'Resetar Tudo';
+    var planned = Object.keys(planningState).filter(function(k){ return planningState[k]; });
+    document.getElementById('btn-cta').textContent = 'Ir para as Compras →';
+    document.getElementById('btn-cta').disabled = planned.length === 0;
+    buildList();
+    updateUI();
+  }
+
+  // ── CTA & secondary actions ───────────────────────────────────
+  window.onCtaAction = function() {
+    if (viewMode === 'planning') {
+      switchToShopping();
+    } else {
+      if (!confirm('Iniciar nova compra? Os itens comprados serão desmarcados. A lista permanece.')) return;
+      shoppingState = {};
+      buildList();
+      updateUI();
+      if (window._fbResetShopping) window._fbResetShopping();
+    }
+  };
+
+  window.onSecondaryAction = function() {
+    if (viewMode === 'planning') {
+      if (!confirm('Resetar tudo? O planejamento e os itens comprados serão apagados.')) return;
+      planningState = {};
+      shoppingState = {};
+      buildList();
+      updateUI();
+      if (window._fbResetAll) window._fbResetAll();
+    } else {
+      switchToPlanning();
+    }
+  };
+
+  // ── Firebase callbacks (chamados pelo Script 2) ───────────────
+  window._setPlanningState = function(state) { planningState = state; };
+  window._setShoppingState = function(state) { shoppingState = state; };
+
+  window._onPlanningSync = function(state) {
+    planningState = state;
+    if (viewMode === 'planning') {
+      ITEMS.forEach(function(item) {
+        var el = document.getElementById('item-' + item.id);
+        if (el) el.classList.toggle('planned', !!planningState[item.id]);
+      });
+    } else {
+      // Rebuild shopping list in case planning changed
+      buildList();
+    }
+    updateUI();
+  };
+
+  window._onShoppingSync = function(state) {
+    shoppingState = state;
+    if (viewMode === 'shopping') {
+      ITEMS.forEach(function(item) {
+        var el = document.getElementById('item-' + item.id);
+        if (el) el.classList.toggle('bought', !!shoppingState[item.id]);
+      });
+    }
+    updateUI();
+  };
+
+  // ── Initial render ────────────────────────────────────────────
+  buildList();
+  updateUI();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPT 2 — Firebase sync (carrega de forma independente)
+     ═══════════════════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ──────────────────────────────────────────────────────────────
+  // Credenciais do Firebase (não alterar)
+  // ──────────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyARUM1NNogRchTBvpKH7n8sMHT771cJH9c",
+    authDomain:        "lista-mercado-de8db.firebaseapp.com",
+    databaseURL:       "https://lista-mercado-de8db-default-rtdb.firebaseio.com",
+    projectId:         "lista-mercado-de8db",
+    storageBucket:     "lista-mercado-de8db.firebasestorage.app",
+    messagingSenderId: "1005949874285",
+    appId:             "1:1005949874285:web:8e7d74d499d2bb7757cf64"
+  };
+
+  const app         = initializeApp(firebaseConfig);
+  const db          = getDatabase(app);
+  const planningRef = ref(db, 'planning');
+  const shoppingRef = ref(db, 'shopping');
+
+  // Expose write functions
+  window._fbUpdatePlanning = (id, val) => update(planningRef, { [id]: val });
+  window._fbUpdateShopping = (id, val) => update(shoppingRef, { [id]: val });
+  window._fbResetShopping  = ()        => set(shoppingRef, null);
+  window._fbResetAll       = ()        => { set(planningRef, null); set(shoppingRef, null); };
+
+  // Sync planning state
+  onValue(planningRef,
+    snapshot => {
+      window._onPlanningSync(snapshot.val() || {});
+      document.getElementById('status-dot').className = 'status-dot connected';
+    },
+    () => {
+      document.getElementById('status-dot').className = 'status-dot error';
+    }
+  );
+
+  // Sync shopping state
+  onValue(shoppingRef,
+    snapshot => {
+      window._onShoppingSync(snapshot.val() || {});
+    }
+  );
+</script>
+
+</body>
+</html>
